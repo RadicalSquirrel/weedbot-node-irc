@@ -1,6 +1,8 @@
+/* jshint esversion: 6*/
+
 // Create the configuration
 var config = require('./config/irc.json');
-
+var users = require('./config/users.json');
 // Get the libs
 var irc = require("irc");
 const fs = require("fs");
@@ -8,20 +10,31 @@ const fs = require("fs");
 // Create the bot
 var bot = new irc.Client(config.server, config["bot-name"], { channels: config.channels });
 
-bot.addListener('message', function(from, to, message) {
-  console.log('from : ' + from)
-  console.log('to : ' + to)
-  console.log('message : ' + message)
+bot.addListener('message', (from, to, message) => {
+  console.log('from : ' + from + '\nto: ' + to + '\nmessage: ' + message);
   if (config.accept_commands === false) {
-    console.log('bot not accepting commands')
+    console.log('bot not accepting commands');
     return;
   } else if(from.includes(config["bot-name"])){
-    console.log('I said this!')
+    console.log('I said this!');
   } else if (message.charAt(0) === config.user_command){
     //Command character found at index 0.
-    var cmd;
+    var cmd,
+    subcmd,
+    argstring = '';
     if (message.includes(' ')){
-      cmd = message.substr(1, cmd-1).toLowerCase();
+      const args = message.split(' ');
+      console.log(args);
+      cmd = args[0].substr(1).toLowerCase();
+      if (args[1]) {
+        subcmd = args[1].toLowerCase();
+      }
+      if (args[2]) {
+        for (var i = 2; i < args.length; i++) {
+          argstring += args[i] + ' ';
+        }
+        argstring = argstring.trim();
+      }
     } else {
       cmd = message.substr(1).toLowerCase();
     }
@@ -35,26 +48,66 @@ bot.addListener('message', function(from, to, message) {
       bot.say(config.channels[0],"I made you a sandwich! :3");
     }
     if (cmd == "gif"){
-      console.log("Random Line from gif.txt");
-      sayRandomLine('./items/gif.txt');
+      console.log("Random Line from gif.json");
+      randomItem('gif.json', gif=>{
+        bot.say(config.channels[0], gif);
+      });
+    }
+    if (cmd == "add"){
+      console.log('Add!');
+      if (subcmd=='gif'&&argstring){
+        console.log(from + ' adding gif' + argstring);
+        fs.readFile('./items/gif.json', 'utf-8', (err, data) => {
+          if (err) console.log(err);
+          else {
+            const array = JSON.parse(data);
+            array.push(argstring);
+            fs.writeFile('./items/gif.json', JSON.stringify(array), 'utf-8', err => {
+              if (err) { console.log(err);}
+              else {
+                bot.say(config.channels[0], "Added!");
+              }
+            });
+          }
+        });
+      } else if (subcmd=='quote'&&argstring){
+        console.log(from + ' adding quote' + argstring);
+        fs.readFile('./items/quote.json', 'utf-8', (err, data) => {
+          if (err) console.log(err);
+          else {
+            const array = JSON.parse(data);
+            array.push(argstring);
+            fs.writeFile('./items/quote.json', JSON.stringify(array), 'utf-8', err => {
+              if (err) { console.log(err);}
+              else {
+                bot.say(config.channels[0], "Added!");
+              }
+            });
+          }
+        });
+      }
     }
     if (cmd == "shit"){
-      console.log("Random Line from shit.txt");
-      sayRandomLine('./items/shit.txt');
+      console.log("Random Line from shit.json");
+      randomItem('shit.json', shit=>{
+        bot.say(config.channels[0], shit);
+      });
     }
     if (cmd == "version"){
       console.log("Version Check");
-      bot.say(config.channels[0], 'HOIIIII my version is 3.0 rite now');
+      bot.say(config.channels[0], config.version);
     }
     if (cmd == "quote"){
       console.log("Quote!");
-      sayRandomLine('./items/quote.txt');
+      randomItem('quote.json', quote =>{
+        bot.say(config.channels[0], quote);
+      });
     }
     if (cmd == "rng") {
-      bot.say(config.channels[0], (Math.floor(Math.random() * (999999 - 1 + 1)) + 1))
+      bot.say(config.channels[0], (Math.floor(Math.random() * (999999 - 1 + 1)) + 1));
     }
     if (cmd == "commands" || cmd == "help" || cmd == "list"){
-      bot.say(config.channels[0], "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich")
+      bot.say(config.channels[0], "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich");
     }
     if (cmd == "color") {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));
@@ -62,22 +115,46 @@ bot.addListener('message', function(from, to, message) {
   }
 });
 
-// Pull file
-function sayRandomLine(filename){
-  fs.readFile(filename, "utf-8", function(err, data){
-    if(err) throw err;
-    var lines = data.split('\n');
-    var randomLine = lines[Math.floor(Math.random()*lines.length)];
-    console.log(randomLine);
-    bot.say(config.channels[0], randomLine);
-  })
+bot.addListener('error', err => {
+  console.log('error: ' + err);
+});
+
+bot.addListener('pm', (from, message) => {
+  console.log('pm from: ' + from + '\nmessage: ' + message);
+  if (from.includes(users.admins)){
+    bot.say(from, "You're an admin!!");
+    if(message == 'reload'){
+      console.log('reload actions here');
+    }
+  } else {
+    bot.say("I don't want to talk to you!");
+  }
+});
+
+function randomItem(filename,item) {
+  fs.readFile('./items/'+filename, 'utf-8', (err, data) => {
+    let items = JSON.parse(data);
+    console.log('Array Length: ' + items.length);
+    let random_index = Math.floor(Math.random()*((items.length-1)+1));
+    console.log('random index: ' + random_index);
+    let random_item = items[random_index];
+    console.log('random item for ' + filename + ' :' + random_item);
+    item(random_item);
+  });
 }
 
+/* todo list:
+#1 Ability to add gif, quotes, shit via pm
+#2 Google search @g, Google image search @gis, @wiki wikipedia search
+#3 Anime integration
+
+
+*/
 // Send for Names (experiment with this)
 //function getNames(){ Client.send('names', config.channels[0]); }
 
-// List for names and output to console
-//bot.addListener('names', function(channel, names) {
+// List for names and output to console;
+//bot.addListener('r  console.log('random index: ' + random_index);ndom_indexnames', function(channel, names) {
 //  namekeys = Object.keys(names); //creates an array of all User Names in the channel
 //  for (i=0; i < namekeys.length; ++i) { console.log(namekeys[i]); } //logs all names to console
 // This actually needs to do two things
