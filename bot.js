@@ -3,6 +3,9 @@
 // Create the configuration
 var config = require('./config/irc.json');
 var users = require('./config/users.json');
+var googleoptions = require('./config/google.json');
+var google = require('google-search');
+var search = new google(googleoptions);
 // Get the libs
 var irc = require("irc");
 const fs = require("fs");
@@ -18,7 +21,6 @@ bot.addListener('message', (from, to, message) => {
   } else if(from.includes(config["bot-name"])){
     console.log('I said this!');
   } else if (message.charAt(0) === config.user_command){
-    //Command character found at index 0.
     var cmd,
     subcmd,
     argstring = '';
@@ -111,6 +113,39 @@ bot.addListener('message', (from, to, message) => {
     }
     if (cmd == "color") {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));
+    }
+  } else if (message.charAt(0)=='@'){
+    var split_message,cmd,argstring;
+    if (message.includes(' ')){
+      split_message = message.split(' ');
+      cmd = split_message[0]
+      argstring = message.substr(message.indexOf(cmd)+cmd.length)
+    }
+    if (cmd=='@gis') {
+      console.log('searching image: ' + argstring)
+      search.build({
+        searchType: 'image',
+        q: argstring
+      }, (err,res) => {
+        if (err) {console.log(err);}
+        else {
+          console.log('full res: ' + JSON.stringify(res));
+          console.log('item selected: ' + res.items[0].link);
+          bot.say(config.channels[0], res.items[0].link);
+        }
+      })
+    } else if (cmd=='@g') {
+      console.log('searching: ' + argstring)
+      search.build({
+        q: argstring
+      }, (err,res)=>{
+        if (err) {console.log(err);}
+        else {
+          console.log('full res: ' + JSON.stringify(res));
+          console.log('res from search: ' + res.items[0].link);
+          bot.say(config.channels[0], res.items[0].link);
+        }
+      })
     }
   }
 });
