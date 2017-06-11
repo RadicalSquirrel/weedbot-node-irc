@@ -13,7 +13,8 @@ youtube.setKey(googleoptions.ytkey);
 // Get the libs
 var irc = require("irc");
 const fs = require("fs");
-
+var user_commands = /[@!$]/;
+console.log(user_commands.test('@'));
 // Create the bot
 var bot = new irc.Client(config.server, config["bot-name"], { channels: config.channels, retryCount: 50, autoRejoin: true });
 
@@ -26,44 +27,37 @@ bot.addListener('message', (from, to, message) => {
     return;
   } else if(from.includes(config["bot-name"])){
     console.log('I said this!');
-  } else if (message.charAt(0) === config.user_command){
+  } else if (user_commands.test(message.charAt(0))){
+    console.log("this is a command!");
     var cmd,
-    subcmd,
-    argstring = '';
+    subcmd;
     if (message.includes(' ')){
       const args = message.split(' ');
       console.log(args);
-      cmd = args[0].substr(1).toLowerCase();
-      if (args[1]) {
-        subcmd = args[1].toLowerCase();
-      }
-      if (args[2]) {
-        for (var i = 2; i < args.length; i++) {
-          argstring += args[i] + ' ';
-        }
-        argstring = argstring.trim();
-      }
+      cmd = args[0].toLowerCase();
+      subcmd = args[1].toLowerCase();
     } else {
-      cmd = message.substr(1).toLowerCase();
+      cmd = message.toLowerCase();
     }
-    if (cmd == "info"){
+    if (cmd == "!info"){
       bot.say(config.channels[0], config.info_message);
     }
-    if (cmd == "weed") {
+    if (cmd == "!weed") {
       bot.say(config.channels[0], "http://420.moe");
     }
-    if (cmd == "sandwich"){
+    if (cmd == "!sandwich"){
       bot.say(config.channels[0],"I made you a sandwich! :3");
     }
-    if (cmd == "gif"){
+    if (cmd == "!gif"){
       console.log("Random Line from gif.json");
       randomItem('gif.json', gif=>{
         bot.say(config.channels[0], gif);
       });
     }
-    if (cmd == "add"){
+    if (cmd == "!add"){
       console.log('Add!');
-      if (subcmd=='gif'&&argstring){
+      const argstring = message.substr(message.toLowerCase().indexOf(subcmd)).trim();
+      if (subcmd=='gif'){
         console.log(from + ' adding gif' + argstring);
         fs.readFile('./items/gif.json', 'utf-8', (err, data) => {
           if (err) console.log(err);
@@ -78,7 +72,7 @@ bot.addListener('message', (from, to, message) => {
             });
           }
         });
-      } else if (subcmd=='quote'&&argstring){
+      } else if (subcmd=='quote'){
         console.log(from + ' adding quote' + argstring);
         fs.readFile('./items/quote.json', 'utf-8', (err, data) => {
           if (err) console.log(err);
@@ -95,43 +89,37 @@ bot.addListener('message', (from, to, message) => {
         });
       }
     }
-    if (cmd == "shit"){
+    if (cmd == "!shit"){
       console.log("Random Line from shit.json");
       randomItem('shit.json', shit=>{
         bot.say(config.channels[0], shit);
       });
     }
-    if (cmd == "version"){
+    if (cmd == "!version"){
       console.log("Version Check");
       bot.say(config.channels[0], config.version);
     }
-    if (cmd == "quote"){
+    if (cmd == "!quote"){
       console.log("Quote!");
       randomItem('quote.json', quote =>{
         bot.say(config.channels[0], quote);
       });
     }
-    if (cmd == "rng") {
+    if (cmd == "!rng") {
       bot.say(config.channels[0], (Math.floor(Math.random() * (999999 - 1 + 1)) + 1));
     }
-    if (cmd == "commands" || cmd == "help" || cmd == "list"){
+    if (cmd == "!commands" || cmd == "!help" || cmd == "!list"){
       bot.say(config.channels[0], "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich");
     }
-    if (cmd == "color") {
+    if (cmd == "!color") {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));
     }
-  } else if (message.charAt(0)=='@'){
-    var split_message,cmd2,argstring2;
-    if (message.includes(' ')){
-      split_message = message.split(' ');
-      cmd2 = split_message[0];
-      argstring2 = message.substr(message.indexOf(cmd2)+cmd2.length);
-    }
-    if (cmd2=='@gis') {
-      console.log('searching image: ' + argstring2);
+    if (cmd == '@gis') {
+      const argstring = message.substr(message.toLowerCase().indexOf(cmd)).trim();
+      console.log('searching image: ' + argstring);
       search.build({
         searchType: 'image',
-        q: argstring2
+        q: argstring
       }, (err,res) => {
         if (err) {console.log(err);}
         else {
@@ -140,10 +128,12 @@ bot.addListener('message', (from, to, message) => {
           bot.say(config.channels[0], res.items[0].link);
         }
       });
-    } else if (cmd2=='@g') {
-      console.log('searching: ' + argstring2);
+    }
+    if (cmd=='@g') {
+      const argstring = message.substr(message.toLowerCase().indexOf(cmd)).trim();
+      console.log('searching: ' + argstring);
       search.build({
-        q: argstring2
+        q: argstring
       }, (err,res)=>{
         if (err) {console.log(err);}
         else {
@@ -152,14 +142,18 @@ bot.addListener('message', (from, to, message) => {
           bot.say(config.channels[0], res.items[0].link);
         }
       });
-    } else if (cmd2=='@yt') {
-      console.log('youtubing: ' + argstring2);
-      youtube.search(argstring2,5,(err,res)=>{
+    }
+    if (cmd=='@yt') {
+      const argstring = message.substr(message.toLowerCase().indexOf(subcmd)).trim();
+      console.log('youtubing: ' + argstring);
+      youtube.search(argstring,5,(err,res)=>{
         if (err) {console.log(err);}
         else {
+          var id = 0;
+          if (!res.items[0].id.videoId) id++;
           console.log('full res: ' + JSON.stringify(res));
-          console.log('res from search: ' + res.items[0].id.videoId);
-          bot.say(config.channels[0], 'https://youtu.be/' + res.items[0].id.videoId);
+          console.log('res from search: ' + res.items[id].id.videoId);
+          bot.say(config.channels[0], 'https://youtu.be/' + res.items[id].id.videoId);
         }
       });
     }
