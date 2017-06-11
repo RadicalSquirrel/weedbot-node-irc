@@ -1,9 +1,10 @@
 {
-  "name" : "weedbot-node-irc",
-  "description":"A node-irc bot for #anime on orderofthetilde.net",
+  "name": "weedbot-node-irc",
+  "description": "A node-irc bot for #anime on orderofthetilde.net",
   "dependencies": {
     "google-search": "^0.0.5",
-    "irc": "^0.5.2"
+    "irc": "^0.5.2",
+    "youtube-node": "^1.3.0"
   },
   "license": "MIT"
 }

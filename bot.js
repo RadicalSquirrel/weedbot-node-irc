@@ -6,16 +6,22 @@ var users = require('./config/users.json');
 var googleoptions = require('./config/google.json');
 var google = require('google-search');
 var search = new google(googleoptions);
+var Youtube = require('youtube-node');
+var youtube = new Youtube();
+var talk = false;
+youtube.setKey(googleoptions.ytkey);
 // Get the libs
 var irc = require("irc");
 const fs = require("fs");
 
 // Create the bot
-var bot = new irc.Client(config.server, config["bot-name"], { channels: config.channels });
+var bot = new irc.Client(config.server, config["bot-name"], { channels: config.channels, retryCount: 50, autoRejoin: true });
+
+setTimeout(talkTrue,3000);
 
 bot.addListener('message', (from, to, message) => {
   console.log('from : ' + from + '\nto: ' + to + '\nmessage: ' + message);
-  if (config.accept_commands === false) {
+  if (config.accept_commands === false || talk === false) {
     console.log('bot not accepting commands');
     return;
   } else if(from.includes(config["bot-name"])){
@@ -115,17 +121,17 @@ bot.addListener('message', (from, to, message) => {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));
     }
   } else if (message.charAt(0)=='@'){
-    var split_message,cmd,argstring;
+    var split_message,cmd2,argstring2;
     if (message.includes(' ')){
       split_message = message.split(' ');
-      cmd = split_message[0]
-      argstring = message.substr(message.indexOf(cmd)+cmd.length)
+      cmd2 = split_message[0];
+      argstring2 = message.substr(message.indexOf(cmd2)+cmd2.length);
     }
-    if (cmd=='@gis') {
-      console.log('searching image: ' + argstring)
+    if (cmd2=='@gis') {
+      console.log('searching image: ' + argstring2);
       search.build({
         searchType: 'image',
-        q: argstring
+        q: argstring2
       }, (err,res) => {
         if (err) {console.log(err);}
         else {
@@ -133,11 +139,11 @@ bot.addListener('message', (from, to, message) => {
           console.log('item selected: ' + res.items[0].link);
           bot.say(config.channels[0], res.items[0].link);
         }
-      })
-    } else if (cmd=='@g') {
-      console.log('searching: ' + argstring)
+      });
+    } else if (cmd2=='@g') {
+      console.log('searching: ' + argstring2);
       search.build({
-        q: argstring
+        q: argstring2
       }, (err,res)=>{
         if (err) {console.log(err);}
         else {
@@ -145,7 +151,17 @@ bot.addListener('message', (from, to, message) => {
           console.log('res from search: ' + res.items[0].link);
           bot.say(config.channels[0], res.items[0].link);
         }
-      })
+      });
+    } else if (cmd2=='@yt') {
+      console.log('youtubing: ' + argstring2);
+      youtube.search(argstring2,5,(err,res)=>{
+        if (err) {console.log(err);}
+        else {
+          console.log('full res: ' + JSON.stringify(res));
+          console.log('res from search: ' + res.items[0].id.videoId);
+          bot.say(config.channels[0], 'https://youtu.be/' + res.items[0].id.videoId);
+        }
+      });
     }
   }
 });
@@ -178,9 +194,13 @@ function randomItem(filename,item) {
   });
 }
 
+function talkTrue(){
+  talk=true;
+  console.log('talk: ' + talk);
+  return;
+}
+
 /* todo list:
-#1 Ability to add gif, quotes, shit via pm
-#2 Google search @g, Google image search @gis, @wiki wikipedia search
 #3 Anime integration
 
 
