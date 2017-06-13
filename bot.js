@@ -56,7 +56,7 @@ bot.addListener('message', (from, to, message) => {
     }
     if (cmd == "!add"){
       console.log('Add!');
-      const argstring = message.substr(message.toLowerCase().indexOf(subcmd)).trim();
+      const argstring = message.substr(message.toLowerCase().indexOf(subcmd) + subcmd.length).trim();
       if (subcmd=='gif'){
         console.log(from + ' adding gif' + argstring);
         fs.readFile('./items/gif.json', 'utf-8', (err, data) => {
@@ -115,13 +115,18 @@ bot.addListener('message', (from, to, message) => {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));
     }
     if (cmd == '@gis') {
-      const argstring = message.substr(message.toLowerCase().indexOf(cmd)).trim();
+      const argstring = message.substr(message.toLowerCase().indexOf(cmd) + cmd.length).trim();
       console.log('searching image: ' + argstring);
       search.build({
         searchType: 'image',
         q: argstring
       }, (err,res) => {
         if (err) {console.log(err);}
+        else if (res.queries.request[0].totalResults === "0") {
+          console.log('full res: ' + JSON.stringify(res));
+          console.log('No results');
+          bot.say(config.channels[0], 'No results! :(');
+        }
         else {
           console.log('full res: ' + JSON.stringify(res));
           console.log('item selected: ' + res.items[0].link);
@@ -130,12 +135,17 @@ bot.addListener('message', (from, to, message) => {
       });
     }
     if (cmd=='@g') {
-      const argstring = message.substr(message.toLowerCase().indexOf(cmd)).trim();
+      const argstring = message.substr(message.toLowerCase().indexOf(cmd) + cmd.length).trim();
       console.log('searching: ' + argstring);
       search.build({
         q: argstring
       }, (err,res)=>{
         if (err) {console.log(err);}
+        else if (res.queries.request[0].totalResults === "0") {
+          console.log('full res: ' + JSON.stringify(res));
+          console.log('No results');
+          bot.say(config.channels[0], 'No results! :(');
+        }
         else {
           console.log('full res: ' + JSON.stringify(res));
           console.log('res from search: ' + res.items[0].link);
@@ -144,7 +154,7 @@ bot.addListener('message', (from, to, message) => {
       });
     }
     if (cmd=='@yt') {
-      const argstring = message.substr(message.toLowerCase().indexOf(subcmd)).trim();
+      const argstring = message.substr(message.toLowerCase().indexOf(cmd) + cmd.length).trim();
       console.log('youtubing: ' + argstring);
       youtube.search(argstring,5,(err,res)=>{
         if (err) {console.log(err);}
