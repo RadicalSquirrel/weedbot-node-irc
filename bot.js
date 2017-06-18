@@ -9,12 +9,12 @@ var search = new google(googleoptions);
 var Youtube = require('youtube-node');
 var youtube = new Youtube();
 var talk = false;
+var staticcmds = require('./items/static.json');
 youtube.setKey(googleoptions.ytkey);
 // Get the libs
 var irc = require("irc");
 const fs = require("fs");
 var user_commands = /[@!$]/;
-console.log(user_commands.test('@'));
 // Create the bot
 var bot = new irc.Client(config.server, config["bot-name"], { channels: config.channels, retryCount: 50, autoRejoin: true });
 
@@ -39,14 +39,10 @@ bot.addListener('message', (from, to, message) => {
     } else {
       cmd = message.toLowerCase();
     }
-    if (cmd == "!info"){
-      bot.say(config.channels[0], config.info_message);
-    }
-    if (cmd == "!weed") {
-      bot.say(config.channels[0], "http://420.moe");
-    }
-    if (cmd == "!sandwich"){
-      bot.say(config.channels[0],"I made you a sandwich! :3");
+    const test = staticcmds.find(x => x.cmd === cmd.substring(1));
+    console.log(test);
+    if (test){
+      bot.say(config.channels[0], test.message);
     }
     if (cmd == "!gif"){
       console.log("Random Line from gif.json");
@@ -72,7 +68,7 @@ bot.addListener('message', (from, to, message) => {
             });
           }
         });
-      } else if (subcmd=='quote'){
+      } else if (subcmd=='quote') {
         console.log(from + ' adding quote' + argstring);
         fs.readFile('./items/quote.json', 'utf-8', (err, data) => {
           if (err) console.log(err);
@@ -80,6 +76,28 @@ bot.addListener('message', (from, to, message) => {
             const array = JSON.parse(data);
             array.push(argstring);
             fs.writeFile('./items/quote.json', JSON.stringify(array), 'utf-8', err => {
+              if (err) { console.log(err);}
+              else {
+                bot.say(config.channels[0], "Added!");
+              }
+            });
+          }
+        });
+      } else if (subcmd=='static') {
+        const args = message.split(' ');
+        const subcmd2=args[2].toLowerCase();
+        const argstring2 = message.substr(message.toLowerCase().indexOf(subcmd2) + subcmd2.length).trim();
+        console.log(from + ' adding static' + argstring);
+        fs.readFile('./items/static.json', 'utf-8', (err, data) => {
+          if (err) console.log(err);
+          else {
+            const array = JSON.parse(data);
+            const obj = {};
+            obj.message = argstring2;
+            obj.cmd = subcmd2;
+            array.push(obj);
+            staticcmds.push(obj);
+            fs.writeFile('./items/static.json', JSON.stringify(array), 'utf-8', err => {
               if (err) { console.log(err);}
               else {
                 bot.say(config.channels[0], "Added!");
@@ -95,10 +113,6 @@ bot.addListener('message', (from, to, message) => {
         bot.say(config.channels[0], shit);
       });
     }
-    if (cmd == "!version"){
-      console.log("Version Check");
-      bot.say(config.channels[0], config.version);
-    }
     if (cmd == "!quote"){
       console.log("Quote!");
       randomItem('quote.json', quote =>{
@@ -107,9 +121,6 @@ bot.addListener('message', (from, to, message) => {
     }
     if (cmd == "!rng") {
       bot.say(config.channels[0], (Math.floor(Math.random() * (999999 - 1 + 1)) + 1));
-    }
-    if (cmd == "!commands" || cmd == "!help" || cmd == "!list"){
-      bot.say(config.channels[0], "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich");
     }
     if (cmd == "!color") {
       bot.say(config.channels[0], irc.colors.wrap('magenta','TEST'));

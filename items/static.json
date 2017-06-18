@@ -1,0 +1,30 @@
+[
+  {
+    "cmd": "info",
+    "message": "I'm weedbot, the trashiest bot in #anime"
+  },
+  {
+    "cmd": "weed",
+    "message": "http://420.moe"
+  },
+  {
+    "cmd": "sandwich",
+    "message": "I made you a sandwich! :3"
+  },
+  {
+    "cmd": "version",
+    "message": "weedbot 4.0 reporting for trash times"
+  },
+  {
+    "cmd": "help",
+    "message": "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich, @yt, @g, @gis"
+  },
+  {
+    "cmd": "list",
+    "message": "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich, @yt, @g, @gis"
+  },
+  {
+    "cmd": "commands",
+    "message": "!info, !weed, !rng, !gif, !shit, !version, !quote, !color, !commands/!help/!list, !sandwich, @yt, @g, @gis"
+  }
+]
